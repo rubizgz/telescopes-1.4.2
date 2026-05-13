@@ -1,0 +1,19 @@
+{
+    "command": {
+        "help": "Use the nearest telescope"
+    },
+    "notification": {
+        "title": "Telescope"
+    },
+    "targeting": {
+        "label": "Use Telescope"
+    },
+    "localization": {
+        "help_text": "Press E to look through the telescope",
+        "non_found": "No telescope was found!",
+        "telescope_in_use": "Someone else is already using the telescope!",
+        "telescope_too_tilted": "This telescope is too tilted to be used!",
+        "to_far_away": "You went to far away!",
+        "Exit": "Press E to exit the telescope"
+    }
+}

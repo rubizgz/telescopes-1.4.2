@@ -1,0 +1,19 @@
+{
+    "command": {
+        "help": "Usar el telescopio más cercano"
+    },
+    "notification": {
+        "title": "Telescopio"
+    },
+    "targeting": {
+        "label": "Usar telescopio"
+    },
+    "localization": {
+        "help_text": "Pulsa E para mirar por el telescopio",
+        "non_found": "¡No se encontró ningún telescopio!",
+        "telescope_in_use": "¡Alguien más ya está usando el telescopio!",
+        "telescope_too_tilted": "¡Este telescopio está demasiado inclinado para usarse!",
+        "to_far_away": "¡Te alejaste demasiado!",
+        "exit": "Pulsa E para salir del telescopio"
+    }
+}
