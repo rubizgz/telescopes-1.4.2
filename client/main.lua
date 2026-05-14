@@ -39,7 +39,8 @@ end
 
 local function ShowText(data)
     lib.showTextUI(data.text, {
-        position = data.position
+        position = data.position,
+        icon = data.icon or 'fa-solid fa-arrow-right-from-bracket'
     })
 end
 
@@ -438,7 +439,7 @@ if config.useDistanceThread then
                         DrawMarker(config.marker.type, coords.x, coords.y, coords.z + config.models[model].markerHeight, 0.0, 0.0, 0.0, config.marker.rotX, config.marker.rotY, config.marker.rotZ, config.marker.scale.x, config.marker.scale.y, config.marker.scale.z, config.marker.color.r, config.marker.color.g, config.marker.color.b, config.marker.color.a, config.marker.bobUpAndDown, config.marker.faceCamera, config.marker.rotationOrder, config.marker.rotate, config.marker.textureDict, config.marker.textureName, config.marker.drawOnEnts)
                     end
                     if config.target == false then
-                        ShowText({text = locale('localization.help_text'), position = 'right-center'})
+                        ShowText({text = locale('localization.help_text'), position = 'right-center', icon = config.targeting.icon})
                     end
                     if IsControlJustPressed(0, 38) then
                         UseTelescope(closest)
