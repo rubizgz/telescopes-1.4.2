@@ -1,6 +1,7 @@
 {
     "command": {
-        "help": "Usar el telescopio más cercano"
+        "help": "Usar el telescopio más cercano",
+        "not_optin": "No has optado por realizar tareas administrativas. (/optin para alternar)"
     },
     "notification": {
         "title": "Telescopio"

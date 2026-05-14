@@ -1,6 +1,7 @@
 {
     "command": {
-        "help": "Use the nearest telescope"
+        "help": "Use the nearest telescope",
+        "not_optin": "You are not opted in for admin duty. (/optin to toggle)"
     },
     "notification": {
         "title": "Telescope"
