@@ -105,10 +105,9 @@ local function IsPedPlayingAnyTelescopeAnim(ped)
 end
 
 local function IsTelescopeAvailable(coords)
-    local playerPed = PlayerPedId()
     local pedPool = GetGamePool('CPed')
     for _index, ped in pairs(pedPool) do
-        if #(GetEntityCoords(ped) - coords) < 1.0 and ped ~= playerPed then
+        if #(GetEntityCoords(ped) - coords) < 1.0 and ped ~= cache.ped then
             if IsPedPlayingAnyTelescopeAnim(ped) then
                 return false
             end
@@ -168,8 +167,7 @@ local function GetClosestTelescope()
         end
     end
 
-    local playerPed = PlayerPedId()
-    local playerCoords = GetEntityCoords(playerPed)
+    local playerCoords = GetEntityCoords(cache.ped)
     local closest = 0
     local distance = 1000
 
@@ -239,29 +237,28 @@ local function UseTelescope(entity)
         if heading > 360.0 then heading = heading - 360.0 end
     end
 
-    local playerPed = PlayerPedId()
-    TaskGoStraightToCoord(playerPed, offsetCoords.x, offsetCoords.y, offsetCoords.z, 1, 8000, heading, 0.05)
+    TaskGoStraightToCoord(cache.ped, offsetCoords.x, offsetCoords.y, offsetCoords.z, 1, 8000, heading, 0.05)
 
     while true do
         Wait(250)
-        local taskStatus = GetScriptTaskStatus(playerPed, "SCRIPT_TASK_GO_STRAIGHT_TO_COORD")
+        local taskStatus = GetScriptTaskStatus(cache.ped, "SCRIPT_TASK_GO_STRAIGHT_TO_COORD")
         if taskStatus == 0 or taskStatus == 7 then
             break
         end
     end
 
-    ClearPedTasks(playerPed)
-    local difference = math.abs(heading - GetEntityHeading(playerPed))
+    ClearPedTasks(cache.ped)
+    local difference = math.abs(heading - GetEntityHeading(cache.ped))
     if difference > 10.0 then
-        SetEntityHeading(playerPed, heading)
+        SetEntityHeading(cache.ped, heading)
     end
 
-    local dist = #(GetEntityCoords(playerPed)-offsetCoords)
+    local dist = #(GetEntityCoords(cache.ped)-offsetCoords)
     if dist > 0.425 and dist < 2.0 then
-        SetEntityCoords(playerPed, offsetCoords.x, offsetCoords.y, offsetCoords.z-1.0)
+        SetEntityCoords(cache.ped, offsetCoords.x, offsetCoords.y, offsetCoords.z-1.0)
     elseif dist > 2.0 then
         Notification({description = locale('localization.to_far_away'), duration = 7500, type = 'error'})
-        ClearPedTasks(playerPed)
+        ClearPedTasks(cache.ped)
         inTelescope = true
         return
     end
@@ -275,7 +272,7 @@ local function UseTelescope(entity)
         return
     end
 
-    lib.playAnim(playerPed, "mini@telescope", animation.enter, 2.0, 2.0, -1, 2, 0, false, false, false)
+    lib.playAnim(cache.ped, "mini@telescope", animation.enter, 2.0, 2.0, -1, 2, 0, false, false, false)
 
     gameplayCamera.heading = GetGameplayCamRelativeHeading()
     gameplayCamera.pitch = GetGameplayCamRelativePitch()
@@ -284,7 +281,7 @@ local function UseTelescope(entity)
     DoScreenFadeOut(500)
     Wait(600)
 
-    lib.playAnim(playerPed, "mini@telescope", animation.idle, 2.0, 2.0, -1, 1, 0, false, false, false)
+    lib.playAnim(cache.ped, "mini@telescope", animation.idle, 2.0, 2.0, -1, 1, 0, false, false, false)
     CreateTelescopeCamera(entity, data)
     SetupInstructions()
 
@@ -312,7 +309,7 @@ local function UseTelescope(entity)
 
         -- Only handle "less important" stuff every 100 frames
         if tick >= 100 then
-            if #(GetEntityCoords(playerPed)-offsetCoords) > 1.5 or IsEntityDead(playerPed) then
+            if #(GetEntityCoords(cache.ped)-offsetCoords) > 1.5 or IsEntityDead(cache.ped) then
                 doAnim = false
                 break
             end
@@ -349,10 +346,10 @@ local function UseTelescope(entity)
     Wait(500)
 
     if doAnim then
-        lib.playAnim(playerPed, "mini@telescope", animation.exit, 2.0, 1.0, -1, 0, 0, false, false, false)
+        lib.playAnim(cache.ped, "mini@telescope", animation.exit, 2.0, 1.0, -1, 0, 0, false, false, false)
         Wait(1500)
     else
-        ClearPedTasks(playerPed)
+        ClearPedTasks(cache.ped)
         HideText()
     end
 
@@ -421,8 +418,7 @@ if config.useDistanceThread then
     CreateThread(function()
         while true do
             if not inTelescope then
-                local playerPed = PlayerPedId()
-                local playerCoords = GetEntityCoords(playerPed)
+                local playerCoords = GetEntityCoords(cache.ped)
                 local closest = 0
                 local distance = 250
 
