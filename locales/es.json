@@ -1,20 +1,25 @@
 {
     "command": {
-        "help": "Usar el telescopio más cercano",
-        "not_optin": "No has optado por realizar tareas administrativas. (/optin para alternar)"
+        "telescope_help": "Usar el telescopio más cercano.",
+        "admin_not_optin": "No estás en servicio de administración. Usa /optin para activarlo."
     },
     "notification": {
-        "title": "Telescopio"
+        "title": "Telescopio",
+        "cancelled": "Acción cancelada.",
+        "not_found": "No se encontró ningún telescopio cerca.",
+        "too_tilted": "Este telescopio está demasiado inclinado para usarse correctamente.",
+        "too_far": "¡Te has alejado demasiado del telescopio!",
+        "in_use": "¡Alguien más ya está usando este telescopio!"
     },
-    "targeting": {
-        "label": "Usar telescopio"
+    "interaction": {
+        "target_use": "Usar telescopio",
+        "target_collect": "Recoger telescopio",
+        "prompt_use": "Presiona E para mirar por el telescopio",
+        "prompt_exit": "Presiona E para salir de la vista"
     },
-    "localization": {
-        "help_text": "Pulsa E para mirar por el telescopio",
-        "non_found": "¡No se encontró ningún telescopio!",
-        "telescope_in_use": "¡Alguien más ya está usando el telescopio!",
-        "telescope_too_tilted": "¡Este telescopio está demasiado inclinado para usarse!",
-        "to_far_away": "¡Te alejaste demasiado!",
-        "exit": "Pulsa E para salir del telescopio"
+    "placement": {
+        "progress_label": "Colocando telescopio...",
+        "collect_label": "Recogiendo telescopio...",
+        "controls": "[SCROLL] - Rotación    \n[ENTER] - Colocar    \n[BACKSPACE] - Cancelar"
     }
 }
