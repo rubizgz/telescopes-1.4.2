@@ -2,6 +2,7 @@ local config = require 'config.client'
 
 -- Variables --
 local inTelescope = false
+local isPlacingObject = false
 local gameplayCamera = {}
 local telescopeHeading = 0.0
 local frozen = false
@@ -13,6 +14,9 @@ local fov = config.zoom.max
 local relativeOffset = 0.0
 local maxVertical = 20.0
 local maxHorizontal = 55.0
+
+local telescopes = {}
+local prop = nil
 
 local hudComponentsToHide = {
     [1] = true, -- Wanted Stars
@@ -28,6 +32,21 @@ local hudComponentsToHide = {
 }
 
 -- Functions --
+local function rotationToDirection(rotation)
+	local adjustedRotation = { x = (math.pi / 180) * rotation.x, y = (math.pi / 180) * rotation.y, z = (math.pi / 180) * rotation.z }
+	local direction = { x = -math.sin(adjustedRotation.z) * math.abs(math.cos(adjustedRotation.x)), y = math.cos(adjustedRotation.z) * math.abs(math.cos(adjustedRotation.x)), z = math.sin(adjustedRotation.x) }
+	return direction
+end
+
+local function rayCastGamePlayCamera(distance)
+    local cameraRotation = GetGameplayCamRot()
+	local cameraCoord = GetGameplayCamCoord()
+	local direction = rotationToDirection(cameraRotation)
+	local destination = { x = cameraCoord.x + direction.x * distance, y = cameraCoord.y + direction.y * distance, z = cameraCoord.z + direction.z * distance }
+	local a, b, c, d, e = GetShapeTestResult(StartShapeTestRay(cameraCoord.x, cameraCoord.y, cameraCoord.z, destination.x, destination.y, destination.z, -1, cache.ped, 0))
+	return destination
+end
+
 local function Notification(data)
     lib.notify({
         title = locale('notification.title'),
@@ -49,7 +68,7 @@ local function HideText()
 end
 
 local function SetupInstructions()
-    ShowText({text = locale('localization.exit'), position = 'right-center'})
+    ShowText({text = locale('interaction.prompt_exit'), position = 'right-center'})
 end
 
 local function CreateTelescopeCamera(entity, data)
@@ -217,16 +236,16 @@ local function GetEntityTilt(entity)
     return xRot + yRot
 end
 
-local function UseTelescope(entity)
+local function InteractTelescope(entity)
     if GetEntityTilt(entity) > config.maxTilt then
-        Notification({description = locale('localization.telescope_too_tilted'), duration = 7500, type = 'error'})
+        Notification({description = locale('notification.too_tilted'), duration = 7500, type = 'error'})
         return
     end
 
     local data = config.models[GetEntityModel(entity)]
     local offsetCoords = GetOffsetFromEntityInWorldCoords(entity, data.offset.x, data.offset.y, data.offset.z)
     if not IsTelescopeAvailable(offsetCoords) then
-        Notification({description = locale('localization.telescope_in_use'), duration = 7500, type = 'error'})
+        Notification({description = locale('notification.in_use'), duration = 7500, type = 'error'})
         return
     end
 
@@ -258,7 +277,7 @@ local function UseTelescope(entity)
     if dist > 0.425 and dist < 2.0 then
         SetEntityCoords(cache.ped, offsetCoords.x, offsetCoords.y, offsetCoords.z-1.0)
     elseif dist > 2.0 then
-        Notification({description = locale('localization.to_far_away'), duration = 7500, type = 'error'})
+        Notification({description = locale('notification.too_far'), duration = 7500, type = 'error'})
         ClearPedTasks(cache.ped)
         inTelescope = true
         return
@@ -374,10 +393,12 @@ if config.target then
         exports.ox_target:addModel(models, {
             {
                 icon = config.targeting.icon,
-                label = locale('targeting.label'),
+                label = locale('interaction.target_use'),
                 distance = config.maxInteractionDist,
                 onSelect = function(data)
-                    UseTelescope(data.entity)
+                    if not isPlacingObject then
+                        InteractTelescope(data.entity)
+                    end
                 end
             }
         })
@@ -386,9 +407,11 @@ if config.target then
             options = {
                 {
                     icon = config.targeting.icon,
-                    label = locale('targeting.label'),
+                    label = locale('interaction.target_use'),
                     action = function(entity)
-                        UseTelescope(entity)
+                        if not isPlacingObject then
+                            InteractTelescope(entity)
+                        end
                     end
                 }
             },
@@ -418,7 +441,7 @@ if config.useDistanceThread then
 
     CreateThread(function()
         while true do
-            if not inTelescope then
+            if not inTelescope and not isPlacingObject then
                 local playerCoords = GetEntityCoords(cache.ped)
                 local closest = 0
                 local distance = 250
@@ -439,15 +462,15 @@ if config.useDistanceThread then
                         DrawMarker(config.marker.type, coords.x, coords.y, coords.z + config.models[model].markerHeight, 0.0, 0.0, 0.0, config.marker.rotX, config.marker.rotY, config.marker.rotZ, config.marker.scale.x, config.marker.scale.y, config.marker.scale.z, config.marker.color.r, config.marker.color.g, config.marker.color.b, config.marker.color.a, config.marker.bobUpAndDown, config.marker.faceCamera, config.marker.rotationOrder, config.marker.rotate, config.marker.textureDict, config.marker.textureName, config.marker.drawOnEnts)
                     end
                     if config.target == false then
-                        ShowText({text = locale('localization.help_text'), position = 'right-center', icon = config.targeting.icon})
+                        ShowText({text = locale('interaction.prompt_use'), position = 'right-center', icon = config.targeting.icon})
                     end
                     if IsControlJustPressed(0, 38) then
-                        UseTelescope(closest)
+                        InteractTelescope(closest)
                     end
                     Wait(0)
                 else
                     HideText()
-                    Wait(distance*20)
+                    Wait(distance*5)
                 end
             else
                 Wait(500)
@@ -456,13 +479,185 @@ if config.useDistanceThread then
     end)
 end
 
+local function UseTelescope(data, item)
+    isPlacingObject = true
+    ShowText({text = locale('placement.controls'), position = 'right-center'})
+    lib.callback.await('telescopes:server:itemActions', false, item.name, 'remove')
+    local prop = CreateObject(GetHashKey(config.useItem[item.name]), 0, 0, 0, false, false, false)
+    local heading = GetEntityHeading(prop)
+    SetEntityAlpha(prop, 150, false)
+    SetEntityCollision(prop, false, false)
+
+    CreateThread(function()
+        while isPlacingObject do
+            Wait(0)
+            local coords = rayCastGamePlayCamera(4.0)
+            SetEntityCoords(prop, coords.x, coords.y, coords.z, heading, false, false, false)
+            PlaceObjectOnGroundProperly(prop)
+
+            DisableControlAction(0, 24, true)
+            DisableControlAction(0, 25, true)
+
+            if IsControlPressed(0, 15) then
+                heading += 1.0
+                SetEntityHeading(prop, heading)
+            elseif IsControlPressed(0, 14) then
+                heading -= 1.0
+                SetEntityHeading(prop, heading)
+            end
+
+            if IsControlPressed(0, 176) then
+                if lib.progressCircle({
+                    duration = 1000,
+                    position = 'bottom',
+                    label = locale('placement.progress_label'),
+                    useWhileDead = false,
+                    canCancel = true,
+                    disable = {
+                        car = true,
+                        move = true, 
+                        combat = true,
+                    },
+                    anim = {
+                        dict = 'pickup_object',
+                        clip = 'pickup_low',
+                        flag = 16,
+                    },
+                    prop = {
+                        model = config.useItem[item.name],
+                        bone = 28422,
+                        pos = vec3(0.05, 0.05, 0.0),
+                        rot = vec3(0.0, 0.0, 180.0)
+                    },
+                }) then
+                    DeleteObject(prop)
+                    DeleteEntity(prop)
+                    HideText()
+                    lib.callback.await('telescopes:server:place', false, item.name, coords, heading)
+                    break
+                else
+                    DeleteObject(prop)
+                    DeleteEntity(prop)
+                    HideText()
+                    lib.callback.await('telescopes:server:itemActions', false, item.name, 'add')
+                    break
+                end
+            elseif IsControlPressed(0, 177) then
+                DeleteObject(prop)
+                DeleteEntity(prop)
+                HideText()
+                lib.callback.await('telescopes:server:itemActions', false, item.name, 'add')
+                break
+            end
+        end
+        isPlacingObject = false
+    end)
+end
+
+exports('UseTelescope', UseTelescope)
+
+local function deleteTelescope(id, item)
+    if lib.progressCircle({
+        duration = 1500,
+        position = 'bottom',
+        label = locale('placement.collect_label'),
+        useWhileDead = false,
+        canCancel = true,
+        disable = {
+            car = true,
+            move = true,
+            combat = true,
+        },
+        anim = {
+            dict = 'pickup_object',
+            clip = 'pickup_low',
+            flag = 16,
+        },
+    }) then
+        lib.callback.await('telescopes:server:delete', false, id)
+        lib.callback.await('telescopes:server:itemActions', false, item, 'add')
+    else
+        Notification({description = locale('notification.cancelled'), duration = 7500, type = 'error'})
+    end
+end
+
+local function spawnAllTelescopes()
+    local svTelescopes = lib.callback.await('telescopes:server:getTelescopes')
+    for k, v in pairs(svTelescopes) do
+        if telescopes[v.id] then goto continue end
+
+        local prop = CreateObject(GetHashKey(config.useItem[v.telescope]), v.coords.x, v.coords.y, v.coords.z, false, false, false)
+        SetEntityHeading(prop, v.coords.w)
+        PlaceObjectOnGroundProperly(prop)
+        Wait(200)
+        FreezeEntityPosition(prop, true)
+
+        telescopes[k] = v
+        telescopes[k].prop = prop
+
+        exports.ox_target:addLocalEntity(prop, {
+            {
+                label = locale('interaction.target_collect'),
+                icon = 'fas fa-hand-paper',
+                onSelect = function()
+                    if not inTelescope and not isPlacingObject then
+                        deleteTelescope(k, v.telescope)
+                    end
+                end
+            }
+        })
+
+        :: continue ::
+    end
+end
+
+local function despawnAllTelescopes()
+    for _, v in pairs(telescopes) do
+        DeleteObject(v.prop)
+        DeleteEntity(v.prop)
+    end
+    telescopes = {}
+end
+
+lib.callback.register('telescopes:client:updateTelescopes', function()
+    spawnAllTelescopes()
+end)
+
+lib.callback.register('telescopes:client:delete', function(id)
+    if telescopes[id] then
+        DeleteObject(telescopes[id].prop)
+        DeleteEntity(telescopes[id].prop)
+        telescopes[id] = nil
+    end
+end)
+
+RegisterNetEvent('QBCore:Client:OnPlayerLoaded', function()
+    Wait(500)
+    spawnAllTelescopes()
+end)
+
+RegisterNetEvent('QBCore:Client:OnPlayerUnload', function()
+    despawnAllTelescopes()
+end)
+
+AddEventHandler('onResourceStart', function(resourceName)
+    if GetCurrentResourceName() ~= resourceName then return end
+    Wait(500)
+    spawnAllTelescopes()
+end)
+
+AddEventHandler('onResourceStop', function(resourceName)
+    if GetCurrentResourceName() ~= resourceName then return end
+    despawnAllTelescopes()
+end)
 
 -- Commands --
-RegisterNetEvent('telescopes:client:UseTelescope', function()
+RegisterNetEvent('telescopes:client:InteractTelescope', function()
+    if isPlacingObject then return end
     local telescope, distance = GetClosestTelescope()
     if telescope ~= 0 and distance < config.maxInteractionDist then
-        UseTelescope(telescope)
+        InteractTelescope(telescope)
     else
-        Notification({description = locale('localization.non_found'), duration = 7500, type = 'error'})
+        Notification({description = locale('notification.not_found'), duration = 7500, type = 'error'})
     end
 end)
