@@ -1,0 +1,6 @@
+CREATE TABLE IF NOT EXISTS `telescopes` (
+    `id` INT(11) NOT NULL AUTO_INCREMENT,
+    `coords` LONGTEXT NOT NULL,
+    `telescope` VARCHAR(50) NOT NULL DEFAULT '',
+    PRIMARY KEY (`id`) USING BTREE
+);
