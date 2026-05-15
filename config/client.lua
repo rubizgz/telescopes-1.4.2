@@ -35,6 +35,17 @@ return {
         icon = 'fas fa-binoculars', -- Icon displayed in target / interaction UI
     },
 
+    useItem = {
+        --[[ Public street telescope ]]
+        ["telescope"] = 'prop_telescope_01',
+        --[[ Mount Chiliad telescope ]]
+        ["telescope2"] = 'prop_telescope',
+        --[[ Domestic/private telescope ]]
+        ["telescope3"] = 'prop_t_telescope_01b',
+        --[[ Arena telescope ]]
+        ["telescope4"] = 'xs_prop_arena_telescope_01',
+    },
+
     -- Enables proximity-based interaction detection (required when target = false)
     useDistanceThread = false,
 
@@ -102,7 +113,7 @@ return {
             animation = "upright",
             cameraOffset = vector3(0.0, 0.2, 1.7),
             scaleform = "BINOCULARS",
-            markerHeight = 1.0
+            markerHeight = 2.0
         },
 
         --[[ Domestic/private telescope ]]
