@@ -1,17 +1,59 @@
-# Telescopes
-Telescopes is a free standalone script that allows players to use telescopes all around the map. Currently, it allows the player to use /telescope, press E when close to one or to use either qTarget, qb-target or ox_target as a 3rd eye solution.
-I decided to release this to the public since I haven’t seen any other telescope scripts around. The script was made for fun, so the code might not be the greatest, feel free to improve upon it.
+# Dependencies
+* **oxmysql**
+* **ox_lib**
+* **ox_target**
+* **ox_inventory**
 
+# Inventory Items Setup
+Add the following lines into your ox_inventory/data/items.lua
 
-# Optional Dependencies
-As previously stated the script allows for qTarget, qb-target pr ox_target to be used. They are disabled by default but can be toggled in the config file.
-You can add your own notification exports/events inside the DisplayNotification function in client.lua (at the top).
+```lua
+    ['telescope'] = {
+        label = 'Telescope',
+        weight = 1500,
+        stack = false,
+        close = true,
+        client = {
+            export = 'telescopes.UseTelescope'
+        }
+    },
+    ['telescope2'] = {
+        label = 'Telescope',
+        weight = 1500,
+        stack = false,
+        close = true,
+        client = {
+            export = 'telescopes.UseTelescope'
+        }
+    },
+    ['telescope3'] = {
+        label = 'Telescope',
+        weight = 1500,
+        stack = false,
+        close = true,
+        client = {
+            export = 'telescopes.UseTelescope'
+        }
+    },
+    ['telescope4'] = {
+        label = 'Telescope',
+        weight = 1500,
+        stack = false,
+        close = true,
+        client = {
+            export = 'telescopes.UseTelescope'
+        }
+    },
+```
 
+# Database Setup
+Execute the following SQL query in your database manager (MariaDB is recommended)
 
-# Optimization
-The script runs at 0.1ms when idling if you have the help text thread (gets the distance to the telescope and displays some help text if close enough). It idles at 0.0 if you only use the command/3rd eye.
-It runs at 0.4 - 0.5ms when using a telescope.
-
-
-# Known Issues
-None :D
+```sql
+CREATE TABLE IF NOT EXISTS `telescopes` (
+    `id` INT(11) NOT NULL AUTO_INCREMENT,
+    `coords` LONGTEXT NOT NULL,
+    `telescope` VARCHAR(50) NOT NULL DEFAULT '',
+    PRIMARY KEY (`id`) USING BTREE
+);
+```
